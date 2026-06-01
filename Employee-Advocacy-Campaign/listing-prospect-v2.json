@@ -1,0 +1,301 @@
+{
+  "id": "5mK5IBsgmCnUHVPd",
+  "name": "Listing Prospect V2",
+  "description": "Persona B redesigné : scoring grandes écoles (commerce + ingé), signaux jeunesse/alternance, 3 queries ciblées (top schools, jeunes en formation, métiers émergents).",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "nodes": [
+    {
+      "id": "b7b01d79-eb31-40c5-b484-d1f051f54d8b",
+      "name": "Schedule 7h (Lun-Ven)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 432],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * 1-5" }]
+        }
+      }
+    },
+    {
+      "id": "906fb347-ca8d-45c1-94ad-57d20b5d5830",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [224, 432],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "serperApiKey", "value": "{{SERPER_API_KEY}}", "type": "string" },
+            { "id": "2", "name": "queryPersonaA_FR", "value": "site:linkedin.com/in (\"CEO\" OR \"Fondateur\" OR \"CTO\" OR \"Directeur Général\" OR \"DG\" OR \"PDG\" OR \"Co-fondateur\" OR \"Président\") (startup OR \"scale-up\" OR SaaS OR fintech OR ETI OR \"deep tech\" OR IA) (France OR Belgique OR Suisse OR Luxembourg OR Canada)", "type": "string" },
+            { "id": "3", "name": "queryPersonaA_EU", "value": "site:linkedin.com/in (\"CEO\" OR \"Founder\" OR \"CTO\" OR \"Managing Director\" OR \"Co-founder\") (startup OR \"scale-up\" OR SaaS OR AI OR tech) (Germany OR Spain OR Netherlands OR Italy OR UK OR Sweden OR Denmark OR Norway OR \"Czech Republic\" OR Poland OR Ukraine OR Georgia OR Iceland OR Austria OR Portugal OR Romania OR Finland OR \"United States\" OR \"New York\" OR California OR Texas OR Florida)", "type": "string" },
+            { "id": "4", "name": "queryPersonaA_INTL", "value": "site:linkedin.com/in (\"CEO\" OR \"Founder\" OR \"CTO\" OR \"Managing Director\" OR \"Co-founder\") (startup OR \"scale-up\" OR SaaS OR AI OR fintech OR tech) (Morocco OR UAE OR Dubai OR Qatar OR Oman OR Singapore OR Australia OR India OR Indonesia OR \"Hong Kong\" OR \"Côte d'Ivoire\" OR Senegal)", "type": "string" },
+            { "id": "5", "name": "queryPersonaB_SCHOOL", "value": "site:linkedin.com/in (\"HEC Paris\" OR \"ESSEC\" OR \"ESCP\" OR \"Polytechnique\" OR \"CentraleSupélec\" OR \"Mines Paris\" OR \"Telecom Paris\" OR \"EDHEC\" OR \"SKEMA\" OR \"emlyon\") (data OR growth OR digital OR GTM OR IA OR transformation) France", "type": "string" },
+            { "id": "6", "name": "queryPersonaB_YOUNG", "value": "site:linkedin.com/in (alternant OR étudiant OR junior OR \"chef de projet\") (INSA OR Epitech OR \"EM Lyon\" OR EDHEC OR \"Grenoble EM\" OR Kedge OR NEOMA OR Efrei) (data OR digital OR growth OR transformation) France", "type": "string" },
+            { "id": "7", "name": "queryPersonaB_EMERGING", "value": "site:linkedin.com/in (\"chef de projet\" OR \"data analyst\" OR \"transformation digitale\" OR \"business developer\" OR consultant) (luxe OR retail OR fintech OR sport OR \"scale-up\" OR startup) France", "type": "string" },
+            { "id": "8", "name": "fixedNote", "value": "Fraichement arrivé sur Paris pour passer quelque années à construire ma carrière après des belles années à surfer autour du globe. Juste là pour étoffer mon cercle. Au plaisir de suivre vos activités", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e1d0bd2f-e615-4b19-87fc-46fff59d199f",
+      "name": "Search A — Page 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaA_FR, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "b17bd070-1e3f-4773-aa49-0ca359ff08ba",
+      "name": "Search A — Page 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 192],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaA_EU, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "89d7ecd2-2e45-453a-b4a3-c167dac48820",
+      "name": "Search A — Page 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [672, 368],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaA_INTL, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "d86907ef-2e28-4b30-9156-e82ed8d701f1",
+      "name": "Search B — Page 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 528],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaB_SCHOOL, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "bdfae8c9-91ff-412e-a527-0aad7e0dc139",
+      "name": "Search B — Page 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 720],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaB_YOUNG, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "94b418c5-8e5f-41cb-9063-0d0485be8d5f",
+      "name": "Search B — Page 3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [672, 896],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaB_EMERGING, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "27005eb5-64ac-4ade-87d7-1f040c1ed9b6",
+      "name": "Merge A (1+2)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [672, 96],
+      "parameters": { "mode": "append" }
+    },
+    {
+      "id": "355b6380-a276-4e67-94a3-e23771c75e24",
+      "name": "Merge A All",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [896, 192],
+      "parameters": { "mode": "append" }
+    },
+    {
+      "id": "4e5329e2-94fb-476f-93b0-7116c53c4437",
+      "name": "Merge B (1+2)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [672, 624],
+      "parameters": { "mode": "append" }
+    },
+    {
+      "id": "8c913ff1-8626-431d-ab0b-c6ad25a64584",
+      "name": "Merge B All",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [896, 720],
+      "parameters": { "mode": "append" }
+    },
+    {
+      "id": "2a647fb2-c8ec-405a-8bba-0158eadceff1",
+      "name": "Extraire Profils A",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 192],
+      "parameters": {
+        "jsCode": "function parseTitle(raw) {\n  const t = (raw || '').replace(/\\s*\\|\\s*LinkedIn\\s*$/i, '').trim();\n  const d = t.split(/\\s+-\\s+/);\n  if (d.length >= 2) return { name: d[0].trim(), jobTitle: d[1].trim(), company: (d[2] || '').trim() };\n  const p = t.split(/\\s*\\|\\s*/);\n  if (p.length >= 2) return { name: p[0].trim(), jobTitle: p[1].trim(), company: (p[2] || '').trim() };\n  return { name: t, jobTitle: '', company: '' };\n}\nfunction scoreKDM(p) {\n  const t = (p.job_title || '').toLowerCase();\n  const all = t + ' ' + (p.snippet || '').toLowerCase();\n  let s = 2;\n  if (/\\b(manager|lead|principal|senior|business owner|entrepreneur|chef de projet|responsable|chargé)\\b/.test(t)) s += 4;\n  else if (/\\b(vp|vice.president|director|head of|directeur|managing|associé|partner|country manager)\\b/.test(t)) s += 3;\n  else if (/\\b(ceo|co-founder|cofounder|founder|pdg|cto|coo|cpo|chief|president|président|managing director|directeur général|dg|gérant|fondateur)\\b/.test(t)) s += 1;\n  if (/\\b(startup|saas|tech|ia|ai|b2b|scale|venture|fintech|proptech|healthtech|deep.tech|growth|cloud|digital|innovation|software|platform|hardware)\\b/.test(all)) s += 2;\n  if (/\\b(france|paris|belgique|suisse|maroc|morocco|dubai|uae|qatar|oman|singapore|australie|australia|inde|india|canada|london|uk|espagne|spain|indonésie|indonesia|abidjan|casablanca|hong kong)\\b/.test(all)) s += 1;\n  return Math.min(s, 10);\n}\nconst profiles = [];\nconst seenLocal = new Set();\nfor (const item of $input.all()) {\n  for (const r of (item.json.organic || [])) {\n    const url = (r.link || '').split('?')[0].split('#')[0].toLowerCase().replace(/\\/$/, '');\n    if (!url.includes('linkedin.com/in/') || url.endsWith('/in/')) continue;\n    if (seenLocal.has(url)) continue;\n    seenLocal.add(url);\n    const { name, jobTitle, company } = parseTitle(r.title || '');\n    if (!name) continue;\n    profiles.push({ linkedin_url: url, name, job_title: jobTitle, company, snippet: (r.snippet || '').slice(0, 250), persona: 'A', persona_label: 'Key Decision Maker' });\n  }\n}\nreturn profiles.map(p => ({ json: { ...p, score: scoreKDM(p) } }));"
+      }
+    },
+    {
+      "id": "50e1ae28-13bb-492a-b0ae-8f3adb38e547",
+      "name": "Extraire Profils B",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 720],
+      "parameters": {
+        "jsCode": "function parseTitle(raw) {\n  const t = (raw || '').replace(/\\s*\\|\\s*LinkedIn\\s*$/i, '').trim();\n  const d = t.split(/\\s+-\\s+/);\n  if (d.length >= 2) return { name: d[0].trim(), jobTitle: d[1].trim(), company: (d[2] || '').trim() };\n  const p = t.split(/\\s*\\|\\s*/);\n  if (p.length >= 2) return { name: p[0].trim(), jobTitle: p[1].trim(), company: (p[2] || '').trim() };\n  return { name: t, jobTitle: '', company: '' };\n}\nfunction scoreCommunity(p) {\n  const t = (p.job_title || '').toLowerCase();\n  const all = t + ' ' + (p.snippet || '').toLowerCase();\n  let s = 0;\n  if (/\\bhec paris\\b/.test(all)) s += 5;\n  else if (/\\b(essec|escp)\\b/.test(all)) s += 4;\n  else if (/\\b(edhec|skema|em ?lyon|emlyon|sciences.?po)\\b/.test(all)) s += 3;\n  else if (/\\b(grenoble em|audencia|kedge|neoma|ieseg|rennes sb)\\b/.test(all)) s += 2;\n  else if (/\\b(montpellier bs|icn|isc paris|rennes school)\\b/.test(all)) s += 1;\n  else if (/\\b(polytechnique|école polytechnique|ecole polytechnique)\\b/.test(all)) s += 5;\n  else if (/\\b(ens ulm|ens paris|ens lyon|ens saclay)\\b/.test(all)) s += 5;\n  else if (/\\b(centrale.?supélec|centralesupelec|supelec|mines paris|mines psl|mines paritech|ponts et chaussées|enpc)\\b/.test(all)) s += 5;\n  else if (/\\b(ensta|telecom paris)\\b/.test(all)) s += 4;\n  else if (/\\b(insa|centrale nantes|centrale lille|centrale lyon|centrale marseille|epitech|42 paris|42school)\\b/.test(all)) s += 3;\n  else if (/\\b(efrei|isep|epita|ensam|isae|iut)\\b/.test(all)) s += 2;\n  if (/\\b(alternant|alternance|apprenti|apprentie|stagiaire)\\b/.test(all)) s += 3;\n  else if (/\\b(étudiant|etudiante?|student|junior|promo 202[3-6]|promotion 202[3-6]|class of 202[3-6])\\b/.test(all)) s += 3;\n  else if (/\\b(promo 202[0-2]|class of 202[0-2]|young professional|récemment diplômé|new grad)\\b/.test(all)) s += 2;\n  if (/\\b(gtm engineer|growth ops|data engineer|data analyst|data scientist|product manager|chef de projet digital|bi analyst)\\b/.test(t)) s += 3;\n  else if (/\\b(digital|growth|transformation|analytics|ia|ai|no.?code|automation|business intelligence)\\b/.test(t)) s += 2;\n  else if (/\\b(consultant|strategy|stratégie|marketing|business developer|innovation|product)\\b/.test(t)) s += 1;\n  if (/\\b(luxe|luxury|lvmh|kering|retail|mode|fashion|fintech|healthtech|sport|wellness|immobilier|proptech)\\b/.test(all)) s += 1;\n  return Math.min(s, 10);\n}\nconst profiles = [];\nconst seenLocal = new Set();\nfor (const item of $input.all()) {\n  for (const r of (item.json.organic || [])) {\n    const url = (r.link || '').split('?')[0].split('#')[0].toLowerCase().replace(/\\/$/, '');\n    if (!url.includes('linkedin.com/in/') || url.endsWith('/in/')) continue;\n    if (seenLocal.has(url)) continue;\n    seenLocal.add(url);\n    const { name, jobTitle, company } = parseTitle(r.title || '');\n    if (!name) continue;\n    profiles.push({ linkedin_url: url, name, job_title: jobTitle, company, snippet: (r.snippet || '').slice(0, 250), persona: 'B', persona_label: 'Community Builder' });\n  }\n}\nreturn profiles.map(p => ({ json: { ...p, score: scoreCommunity(p) } }));"
+      }
+    },
+    {
+      "id": "d6ae1148-9551-4305-9c15-1e23c49f0b61",
+      "name": "Merge Profils",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1344, 464],
+      "parameters": { "mode": "append" }
+    },
+    {
+      "id": "8ffc759f-b2eb-4993-91ee-162edb1ae037",
+      "name": "Dédup + Regex",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1568, 464],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!Array.isArray(staticData.seenUrls)) staticData.seenUrls = [];\nfunction normalizeUrl(url) {\n  return (url || '').toLowerCase().replace(/^https?:\\/\\//i, '').replace(/\\/$/, '').replace(/[?#].*$/, '').trim();\n}\nconst seenNorm = new Set(staticData.seenUrls.map(normalizeUrl));\nconst seenThisRun = new Set();\nconst newA = [];\nconst newB = [];\nfor (const item of $input.all()) {\n  const p = item.json;\n  const norm = normalizeUrl(p.linkedin_url);\n  if (!norm || seenThisRun.has(norm) || seenNorm.has(norm)) continue;\n  seenThisRun.add(norm);\n  if (p.persona === 'A' && newA.length < 15) newA.push(item);\n  else if (p.persona === 'B' && newB.length < 15) newB.push(item);\n}\nconst result = [...newA, ...newB];\nreturn result.length > 0 ? result : [{ json: { _empty: true, message: 'Aucun nouveau profil ce jour' } }];"
+      }
+    },
+    {
+      "id": "4d15c075-28f7-4aa6-92b9-790616d003c5",
+      "name": "Préparer Données Sheets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1792, 464],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!Array.isArray(staticData.seenUrls)) staticData.seenUrls = [];\nconst fixedNote = $node[\"Config\"].json.fixedNote;\nconst dateStr = new Date().toISOString().split('T')[0];\nconst newItems = $input.all().filter(item => !item.json._empty);\nconst newUrls = newItems.map(item => item.json.linkedin_url).filter(Boolean);\nstaticData.seenUrls = [...staticData.seenUrls, ...newUrls];\nif (staticData.seenUrls.length > 5000) staticData.seenUrls = staticData.seenUrls.slice(-5000);\nreturn newItems.map(item => {\n  const p = item.json;\n  return { json: { batch_date: dateStr, persona: p.persona === 'A' ? 'KDM' : 'Community', score: p.score || 0, nom: p.name, titre: p.job_title, entreprise: p.company, linkedin_url: p.linkedin_url, note_connexion: fixedNote } };\n});"
+      }
+    },
+    {
+      "id": "765e13d0-f626-45ef-a398-e992e8658fb3",
+      "name": "Google Sheets — Append",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [2016, 464],
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "{{GOOGLE_SHEET_ID}}", "mode": "id" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "Sheet1" },
+        "columns": { "mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [], "schema": [], "attemptToConvertTypes": false, "convertFieldsToString": false },
+        "options": { "handlingExtraData": "insertInNewColumn", "useAppend": true }
+      }
+    },
+    {
+      "id": "bd00fde7-307c-4467-9470-fe6ae61604b4",
+      "name": "Lire Sheet Complet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [2240, 464],
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "{{GOOGLE_SHEET_ID}}", "mode": "id" },
+        "sheetName": { "__rl": true, "mode": "name", "value": "Sheet1" },
+        "options": {}
+      }
+    },
+    {
+      "id": "d550f661-6988-4ac6-9b38-bbf7cf1aeceb",
+      "name": "Générer CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2464, 464],
+      "parameters": {
+        "jsCode": "const profiles = $input.all().map(i => i.json).filter(p => p.linkedin_url);\nconst dateStr = new Date().toISOString().split('T')[0];\nconst personaACount = profiles.filter(p => p.persona === 'KDM').length;\nconst personaBCount = profiles.filter(p => p.persona === 'Community').length;\nconst totalProfiles = profiles.length;\nconst avgScore = totalProfiles > 0 ? (profiles.reduce((s, p) => s + (Number(p.score) || 0), 0) / totalProfiles).toFixed(1) : '0.0';\nconst q = v => '\"' + String(v || '').replace(/\"/g, '\"\"') + '\"';\nconst sorted = [...profiles].sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));\nconst header = 'batch_date,persona,score,nom,titre,entreprise,linkedin_url,note_connexion';\nconst rows = sorted.map(p => [q(p.batch_date), q(p.persona), p.score || 0, q(p.nom), q(p.titre), q(p.entreprise), p.linkedin_url, q(p.note_connexion)].join(','));\nconst csv = header + '\\n' + rows.join('\\n');\nconst binary = await this.helpers.prepareBinaryData(Buffer.from(csv, 'utf-8'), 'prospects_all_' + dateStr + '.csv', 'text/csv');\nreturn [{ json: { totalProfiles, personaACount, personaBCount, avgScore, dateStr }, binary: { attachment: binary } }];"
+      }
+    },
+    {
+      "id": "98be5cf8-9849-409f-aa9d-30341663ec2b",
+      "name": "Gmail — Envoyer CSV",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [2688, 464],
+      "parameters": {
+        "operation": "send",
+        "sendTo": "victorlegoffboulon@gmail.com",
+        "subject": "={{ \"Prospects LinkedIn \" + $json.dateStr + \" — Liste complète \" + $json.totalProfiles + \" profils (KDM: \" + $json.personaACount + \" | Community: \" + $json.personaBCount + \" | Score moy: \" + $json.avgScore + \"/10)\" }}",
+        "message": "={{ \"<p>Bonjour Victor,</p><p>Fichier cumulatif mis à jour — <strong>\" + $json.totalProfiles + \" profils total</strong> au \" + $json.dateStr + \" :</p><ul><li>KDM : \" + $json.personaACount + \"</li><li>Community : \" + $json.personaBCount + \"</li><li>Score ICP moyen : \" + $json.avgScore + \"/10</li></ul><p>CSV complet en pièce jointe (tous les runs, dédoublonnés).</p>\" }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": { "attachmentsBinary": [{ "property": "attachment" }] }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule 7h (Lun-Ven)": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
+    "Config": { "main": [[{ "node": "Search A — Page 1", "type": "main", "index": 0 }, { "node": "Search A — Page 2", "type": "main", "index": 0 }, { "node": "Search A — Page 3", "type": "main", "index": 0 }, { "node": "Search B — Page 1", "type": "main", "index": 0 }, { "node": "Search B — Page 2", "type": "main", "index": 0 }, { "node": "Search B — Page 3", "type": "main", "index": 0 }]] },
+    "Search A — Page 1": { "main": [[{ "node": "Merge A (1+2)", "type": "main", "index": 0 }]] },
+    "Search A — Page 2": { "main": [[{ "node": "Merge A (1+2)", "type": "main", "index": 1 }]] },
+    "Search A — Page 3": { "main": [[{ "node": "Merge A All", "type": "main", "index": 1 }]] },
+    "Merge A (1+2)": { "main": [[{ "node": "Merge A All", "type": "main", "index": 0 }]] },
+    "Merge A All": { "main": [[{ "node": "Extraire Profils A", "type": "main", "index": 0 }]] },
+    "Search B — Page 1": { "main": [[{ "node": "Merge B (1+2)", "type": "main", "index": 0 }]] },
+    "Search B — Page 2": { "main": [[{ "node": "Merge B (1+2)", "type": "main", "index": 1 }]] },
+    "Search B — Page 3": { "main": [[{ "node": "Merge B All", "type": "main", "index": 1 }]] },
+    "Merge B (1+2)": { "main": [[{ "node": "Merge B All", "type": "main", "index": 0 }]] },
+    "Merge B All": { "main": [[{ "node": "Extraire Profils B", "type": "main", "index": 0 }]] },
+    "Extraire Profils A": { "main": [[{ "node": "Merge Profils", "type": "main", "index": 0 }]] },
+    "Extraire Profils B": { "main": [[{ "node": "Merge Profils", "type": "main", "index": 1 }]] },
+    "Merge Profils": { "main": [[{ "node": "Dédup + Regex", "type": "main", "index": 0 }]] },
+    "Dédup + Regex": { "main": [[{ "node": "Préparer Données Sheets", "type": "main", "index": 0 }]] },
+    "Préparer Données Sheets": { "main": [[{ "node": "Google Sheets — Append", "type": "main", "index": 0 }]] },
+    "Google Sheets — Append": { "main": [[{ "node": "Lire Sheet Complet", "type": "main", "index": 0 }]] },
+    "Lire Sheet Complet": { "main": [[{ "node": "Générer CSV", "type": "main", "index": 0 }]] },
+    "Générer CSV": { "main": [[{ "node": "Gmail — Envoyer CSV", "type": "main", "index": 0 }]] }
+  }
+}

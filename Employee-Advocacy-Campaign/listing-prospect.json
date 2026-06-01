@@ -1,0 +1,226 @@
+{
+  "id": "FbI0uUyhsnCmXIZ6",
+  "name": "Listing Prospect",
+  "description": "Génère chaque matin (lun-ven 7h) 30 profils LinkedIn qualifiés via Serper.dev (15 KDM + 15 Community Builder), scorés par règles ICP, note de connexion fixe, CSV envoyé par Gmail.",
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "nodes": [
+    {
+      "id": "7b500bf1-3642-4033-aa68-12e896b67cbe",
+      "name": "Schedule 7h (Lun-Ven)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 288],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * 1-5" }]
+        }
+      }
+    },
+    {
+      "id": "dad083a3-cbce-49cb-80ae-276798fbaa5f",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [224, 288],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "serperApiKey", "value": "{{SERPER_API_KEY}}", "type": "string" },
+            { "id": "2", "name": "queryPersonaA", "value": "site:linkedin.com/in (\"fondateur\" OR \"co-founder\" OR \"CEO\" OR \"CTO\") (startup OR SaaS) France", "type": "string" },
+            { "id": "3", "name": "queryPersonaB", "value": "site:linkedin.com/in (\"GTM Engineer\" OR \"Growth Ops\" OR \"No-code\") (IA OR AI) France", "type": "string" },
+            { "id": "4", "name": "fixedNote", "value": "Fraichement arrivé sur Paris pour passer quelque années à construire ma carrière après des belles années à surfer autour du globe. Juste là pour étoffer mon cercle. Au plaisir de suivre vos activités", "type": "string" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "70322f5f-7021-4984-9db3-6e69a500e8c7",
+      "name": "Search A — Page 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaA, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "f56c082d-975f-4ae6-a9b9-0fa3682094fd",
+      "name": "Search A — Page 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 192],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaA, \"num\": 10, \"page\": 2} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "09e68569-1f8f-46c1-9aa4-1a8abd3e3673",
+      "name": "Search B — Page 1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 384],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaB, \"num\": 10, \"page\": 1} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "4c7b708f-2160-43c3-8b91-b89ec2855214",
+      "name": "Search B — Page 2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [448, 576],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.queryPersonaB, \"num\": 10, \"page\": 2} }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "773c0594-9881-4803-8cb2-0ecb83cbdd78",
+      "name": "Merge A",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [672, 96],
+      "parameters": {}
+    },
+    {
+      "id": "e0cb86a1-5291-4545-8db7-5570c543b26a",
+      "name": "Merge B",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [672, 480],
+      "parameters": {}
+    },
+    {
+      "id": "0d911e08-bf43-4b09-824d-1660d3c7883b",
+      "name": "Extraire Profils A",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 96],
+      "parameters": {
+        "jsCode": "function parseTitle(raw) {\n  const t = (raw || '').replace(/\\s*\\|\\s*LinkedIn\\s*$/i, '').trim();\n  const d = t.split(/\\s+-\\s+/);\n  if (d.length >= 2) return { name: d[0].trim(), jobTitle: d[1].trim(), company: (d[2] || '').trim() };\n  const p = t.split(/\\s*\\|\\s*/);\n  if (p.length >= 2) return { name: p[0].trim(), jobTitle: p[1].trim(), company: (p[2] || '').trim() };\n  return { name: t, jobTitle: '', company: '' };\n}\nfunction scoreKDM(p) {\n  const t = (p.job_title || '').toLowerCase();\n  const all = t + ' ' + (p.snippet || '').toLowerCase();\n  let s = 3;\n  if (/\\b(ceo|co-founder|cofounder|founder|pdg|cto|coo|cpo|chief|president|président)\\b/.test(t)) s += 4;\n  else if (/\\b(vp|director|head of|responsable|directeur|managing)\\b/.test(t)) s += 2;\n  if (/\\b(startup|saas|tech|ia|ai|b2b|scale|venture)\\b/.test(all)) s += 2;\n  if (/\\b(france|paris|lyon|bordeaux|nantes|toulouse|français|française)\\b/.test(all)) s += 1;\n  return Math.min(s, 10);\n}\nconst profiles = [];\nfor (const item of $input.all()) {\n  for (const r of (item.json.organic || [])) {\n    const url = (r.link || '').split('?')[0].split('#')[0];\n    if (!url.includes('linkedin.com/in/') || url.endsWith('/in/')) continue;\n    const { name, jobTitle, company } = parseTitle(r.title || '');\n    if (!name) continue;\n    profiles.push({ linkedin_url: url, name, job_title: jobTitle, company, snippet: (r.snippet || '').slice(0, 250), persona: 'A', persona_label: 'Key Decision Maker' });\n  }\n}\nconst seen = new Set();\nconst deduped = profiles.filter(p => { if (seen.has(p.linkedin_url)) return false; seen.add(p.linkedin_url); return true; });\nreturn deduped.slice(0, 15).map(p => ({ json: { ...p, score: scoreKDM(p) } }));"
+      }
+    },
+    {
+      "id": "8a3aa797-032f-4f18-aba8-46307f8c51c7",
+      "name": "Extraire Profils B",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [896, 480],
+      "parameters": {
+        "jsCode": "function parseTitle(raw) {\n  const t = (raw || '').replace(/\\s*\\|\\s*LinkedIn\\s*$/i, '').trim();\n  const d = t.split(/\\s+-\\s+/);\n  if (d.length >= 2) return { name: d[0].trim(), jobTitle: d[1].trim(), company: (d[2] || '').trim() };\n  const p = t.split(/\\s*\\|\\s*/);\n  if (p.length >= 2) return { name: p[0].trim(), jobTitle: p[1].trim(), company: (p[2] || '').trim() };\n  return { name: t, jobTitle: '', company: '' };\n}\nfunction scoreCommunity(p) {\n  const t = (p.job_title || '').toLowerCase();\n  const all = t + ' ' + (p.snippet || '').toLowerCase();\n  let s = 3;\n  if (/\\b(gtm engineer|growth ops|revenue ops|revops|sales ops|marketing ops|growth engineer|demand gen)\\b/.test(t)) s += 4;\n  else if (/\\b(growth|automation|outbound|sdr|bdr|freelance)\\b/.test(t)) s += 2;\n  if (/\\b(ai|ia|no-code|automation|clay|n8n|workflow|scraping|enrichment)\\b/.test(all)) s += 2;\n  if (/\\b(france|paris|français|française)\\b/.test(all)) s += 1;\n  return Math.min(s, 10);\n}\nconst profiles = [];\nfor (const item of $input.all()) {\n  for (const r of (item.json.organic || [])) {\n    const url = (r.link || '').split('?')[0].split('#')[0];\n    if (!url.includes('linkedin.com/in/') || url.endsWith('/in/')) continue;\n    const { name, jobTitle, company } = parseTitle(r.title || '');\n    if (!name) continue;\n    profiles.push({ linkedin_url: url, name, job_title: jobTitle, company, snippet: (r.snippet || '').slice(0, 250), persona: 'B', persona_label: 'Community Builder' });\n  }\n}\nconst seen = new Set();\nconst deduped = profiles.filter(p => { if (seen.has(p.linkedin_url)) return false; seen.add(p.linkedin_url); return true; });\nreturn deduped.slice(0, 15).map(p => ({ json: { ...p, score: scoreCommunity(p) } }));"
+      }
+    },
+    {
+      "id": "d9eb3109-0a09-4696-984f-4d7966d55f91",
+      "name": "Merge 30 Profils",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1120, 288],
+      "parameters": {}
+    },
+    {
+      "id": "11eaa6f3-3e8b-47e3-b966-5180d7490b58",
+      "name": "Dédup",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1344, 288],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!Array.isArray(staticData.seenUrls)) staticData.seenUrls = [];\nconst seenGlobal = new Set(staticData.seenUrls);\nconst seen = new Set();\nconst result = $input.all().filter(item => {\n  const url = item.json.linkedin_url;\n  if (!url || seen.has(url) || seenGlobal.has(url)) return false;\n  seen.add(url);\n  return true;\n});\nreturn result.length > 0 ? result : [{ json: { _empty: true, message: 'Aucun nouveau profil ce jour' } }];"
+      }
+    },
+    {
+      "id": "739c85fc-d0fa-4523-81eb-b4d07700b652",
+      "name": "Générer CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1568, 288],
+      "parameters": {
+        "jsCode": "const profiles = $input.all().map(i => i.json).filter(p => !p._empty);\nconst fixedNote = $node[\"Config\"].json.fixedNote;\nconst dateStr = new Date().toISOString().split('T')[0];\nconst staticData = $getWorkflowStaticData('global');\nif (!Array.isArray(staticData.seenUrls)) staticData.seenUrls = [];\nconst newUrls = profiles.map(p => p.linkedin_url).filter(Boolean);\nstaticData.seenUrls = [...staticData.seenUrls, ...newUrls];\nif (staticData.seenUrls.length > 5000) staticData.seenUrls = staticData.seenUrls.slice(-5000);\nconst personaACount = profiles.filter(p => p.persona === 'A').length;\nconst personaBCount = profiles.filter(p => p.persona === 'B').length;\nconst avgScore = profiles.length > 0 ? (profiles.reduce((s, p) => s + (p.score || 0), 0) / profiles.length).toFixed(1) : '0.0';\nconst q = v => '\"' + String(v || '').replace(/\"/g, '\"\"') + '\"';\nconst sorted = [...profiles].sort((a, b) => (b.score || 0) - (a.score || 0));\nconst header = 'score,persona,nom,titre,entreprise,linkedin_url,note_connexion,batch_date';\nconst rows = sorted.map(p => [p.score || 0, p.persona === 'A' ? 'KDM' : 'Community', q(p.name), q(p.job_title), q(p.company), p.linkedin_url, q(fixedNote), dateStr].join(','));\nconst csv = header + '\\n' + rows.join('\\n');\nconst binary = await this.helpers.prepareBinaryData(Buffer.from(csv, 'utf-8'), 'prospects_' + dateStr + '.csv', 'text/csv');\nreturn [{ json: { totalProfiles: profiles.length, personaACount, personaBCount, avgScore, dateStr }, binary: { attachment: binary } }];"
+      }
+    },
+    {
+      "id": "094fab35-d406-44cc-82b7-99334a9ff02d",
+      "name": "Gmail — Envoyer CSV",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1792, 288],
+      "parameters": {
+        "sendTo": "victorlegoffboulon@gmail.com",
+        "subject": "={{ \"Prospects LinkedIn \" + $json.dateStr + \" — \" + $json.totalProfiles + \" profils (A: \" + $json.personaACount + \" | B: \" + $json.personaBCount + \" | Score moy: \" + $json.avgScore + \"/10)\" }}",
+        "message": "={{ \"<p>Bonjour Victor,</p><p><strong>\" + $json.totalProfiles + \" profils LinkedIn</strong> du \" + $json.dateStr + \" :</p><ul><li>Persona A (KDM) : \" + $json.personaACount + \"</li><li>Persona B (Community) : \" + $json.personaBCount + \"</li><li>Score ICP moyen : \" + $json.avgScore + \"/10</li></ul><p>CSV en pièce jointe. Note de connexion pré-remplie dans colonne note_connexion.</p>\" }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": { "attachmentsBinary": [{ "property": "attachment" }] }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule 7h (Lun-Ven)": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
+    "Config": { "main": [[{ "node": "Search A — Page 1", "type": "main", "index": 0 }, { "node": "Search A — Page 2", "type": "main", "index": 0 }, { "node": "Search B — Page 1", "type": "main", "index": 0 }, { "node": "Search B — Page 2", "type": "main", "index": 0 }]] },
+    "Search A — Page 1": { "main": [[{ "node": "Merge A", "type": "main", "index": 0 }]] },
+    "Search A — Page 2": { "main": [[{ "node": "Merge A", "type": "main", "index": 1 }]] },
+    "Search B — Page 1": { "main": [[{ "node": "Merge B", "type": "main", "index": 0 }]] },
+    "Search B — Page 2": { "main": [[{ "node": "Merge B", "type": "main", "index": 1 }]] },
+    "Merge A": { "main": [[{ "node": "Extraire Profils A", "type": "main", "index": 0 }]] },
+    "Merge B": { "main": [[{ "node": "Extraire Profils B", "type": "main", "index": 0 }]] },
+    "Extraire Profils A": { "main": [[{ "node": "Merge 30 Profils", "type": "main", "index": 0 }]] },
+    "Extraire Profils B": { "main": [[{ "node": "Merge 30 Profils", "type": "main", "index": 1 }]] },
+    "Merge 30 Profils": { "main": [[{ "node": "Dédup", "type": "main", "index": 0 }]] },
+    "Dédup": { "main": [[{ "node": "Générer CSV", "type": "main", "index": 0 }]] },
+    "Générer CSV": { "main": [[{ "node": "Gmail — Envoyer CSV", "type": "main", "index": 0 }]] }
+  }
+}
