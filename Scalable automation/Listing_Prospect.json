@@ -1,0 +1,11 @@
+{
+  "id": "FbI0uUyhsnCmXIZ6",
+  "name": "Listing Prospect",
+  "n8n_url": "https://victorlegoff.app.n8n.cloud/workflow/FbI0uUyhsnCmXIZ6",
+  "description": "Génère chaque matin (lun-ven 7h) 30 profils LinkedIn qualifiés via Serper.dev (15 KDM + 15 Community Builder), scorés par règles ICP, note de connexion fixe, CSV envoyé par Gmail.",
+  "active": true,
+  "trigger": "Schedule — 0 7 * * 1-5 (lun-ven 7h)",
+  "nodes": 19,
+  "created_at": "2026-05-19",
+  "updated_at": "2026-05-22"
+}
