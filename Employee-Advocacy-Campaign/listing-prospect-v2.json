@@ -1,273 +1,60 @@
 {
   "id": "5mK5IBsgmCnUHVPd",
   "name": "Listing Prospect V2",
-  "description": "30 profils/jour (15 KDM seniors + 15 Community juniors, 15F+15M). Dedup via Google Sheet. Scoring repensé : KDM = Head of/VP/Director/C-level scale-up, Community = alternants/étudiants/juniors grandes écoles.",
+  "description": "100% — 10 searches (5KDM+5Comm dont 1F ciblé chacun) → ~130 candidats → Crosscheck Quality Gate → Dedup Selection 30 (15KDM+15Comm, 15F+15H, détection genre via marqueurs FR + liste prénoms) → Feedback Loop auto-ajustement page/seuil chaque run.",
   "active": true,
-  "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": true,
-    "binaryMode": "separate"
-  },
+  "nodeCount": 35,
   "nodes": [
-    {
-      "name": "Schedule 7h (Lun-Ven)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
-      "position": [0, 432],
-      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 7 * * 1-5" }] } }
-    },
-    {
-      "name": "Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [224, 432],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            { "id": "1", "name": "serperApiKey", "value": "{{SERPER_API_KEY}}", "type": "string" },
-            { "id": "2", "name": "qKDM_1", "value": "site:linkedin.com/in (\"Head of\" OR \"VP\" OR \"Director\" OR \"Directeur\" OR \"Directrice\") (\"Growth\" OR \"Marketing\" OR \"Sales\" OR \"Revenue\" OR \"Product\") (startup OR SaaS OR tech OR AI OR fintech) (France OR Paris)", "type": "string" },
-            { "id": "3", "name": "qKDM_2", "value": "site:linkedin.com/in (\"CEO\" OR \"CTO\" OR \"COO\" OR \"CPO\") (\"scale-up\" OR \"Series B\" OR \"Series C\" OR ETI OR fintech OR licorne) (France OR Paris OR Lyon OR Bordeaux)", "type": "string" },
-            { "id": "4", "name": "qKDM_3", "value": "site:linkedin.com/in (\"Managing Director\" OR \"Country Manager\" OR \"General Manager\" OR \"DGA\" OR \"Directeur General\" OR \"Directrice Generale\") (tech OR digital OR AI OR transformation) France", "type": "string" },
-            { "id": "5", "name": "qComm_1", "value": "site:linkedin.com/in (alternant OR alternance OR stagiaire OR apprenti OR apprentie) (\"data\" OR \"growth\" OR \"digital\" OR \"marketing\" OR \"GTM\" OR \"no-code\") (HEC OR ESSEC OR ESCP OR Polytechnique OR emlyon OR EDHEC OR SKEMA) France", "type": "string" },
-            { "id": "6", "name": "qComm_2", "value": "site:linkedin.com/in (etudiant OR etudiante OR student OR \"M2\" OR \"Master 2\" OR junior OR debutant) (\"growth\" OR \"data\" OR \"digital\" OR \"GTM\" OR \"automation\" OR \"no-code\") (INSA OR Epitech OR Efrei OR Kedge OR NEOMA OR Audencia) France", "type": "string" },
-            { "id": "7", "name": "qComm_3", "value": "site:linkedin.com/in (\"promo 2024\" OR \"promo 2025\" OR \"promo 2026\" OR \"class of 2025\" OR \"class of 2026\" OR \"jeune diplome\") (\"data\" OR \"growth\" OR \"marketing digital\" OR \"product\" OR \"analytics\") France", "type": "string" },
-            { "id": "8", "name": "fixedNote", "value": "Fraichement arrive sur Paris pour passer quelque annees a construire ma carriere apres des belles annees a surfer autour du globe. Juste la pour etoffer mon cercle. Au plaisir de suivre vos activites", "type": "string" }
-          ]
-        },
-        "options": {}
+    { "name": "Schedule 7h (Lun-Ven)", "type": "n8n-nodes-base.scheduleTrigger" },
+    { "name": "Config", "type": "n8n-nodes-base.set",
+      "queries": {
+        "qKDM_1": "Head of / VP / Director Growth-Marketing-Sales-Product France",
+        "qKDM_2": "CEO / CTO / COO / CPO scale-up Series B-D ETI fintech licorne France",
+        "qKDM_3": "Managing Director / Country Manager / DGA / Directeur General France",
+        "qKDM_4": "SVP / EVP / Global Head Product-Engineering-Data-GTM France Europe",
+        "qKDM_F": "[CIBLÉ F] directrice / fondatrice / cofondatrice / presidente tech scale-up France",
+        "qComm_1": "alternant/alternance/stagiaire/apprenti data-growth grandes écoles commerce France",
+        "qComm_2": "etudiant/M2/junior growth-data écoles ingé (INSA/Epitech/Efrei/NEOMA/Audencia) France",
+        "qComm_3": "promo 2024-2026 data-growth-product grandes écoles françaises France",
+        "qComm_4": "alternant/apprentie/stagiaire data-product écoles ingé (CentraleSupelec/Mines/Telecom/42) France",
+        "qComm_F": "[CIBLÉ F] alternante/apprentie/etudiante data-growth grandes écoles France"
       }
     },
-    {
-      "name": "Lire Prospects Existants",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [448, 432],
-      "alwaysOutputData": true,
-      "parameters": {
-        "operation": "read",
-        "documentId": { "__rl": true, "value": "{{GOOGLE_SHEET_ID}}", "mode": "id" },
-        "sheetName": { "__rl": true, "mode": "id", "value": "{{GOOGLE_SHEET_GID}}" },
-        "options": {}
-      }
-    },
-    {
-      "name": "Agreger URLs Existantes",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [672, 432],
-      "parameters": {
-        "jsCode": "function norm(u) { return (u||'').toLowerCase().replace(/^https?:\\/\\//,'').replace(/\\/$/,'').replace(/[?#].*$/,'').trim(); }\nconst existingUrls = $input.all().map(i => norm(i.json.linkedin_url)).filter(Boolean);\nreturn [{ json: { existingUrls } }];"
-      }
-    },
-    {
-      "name": "Search KDM 1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [896, 0],
-      "parameters": {
-        "method": "POST", "url": "https://google.serper.dev/search",
-        "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
-        "sendBody": true, "specifyBody": "json",
-        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.qKDM_1, \"num\": 10, \"page\": 1} }}",
-        "options": {}
-      }
-    },
-    {
-      "name": "Search KDM 2",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [896, 192],
-      "parameters": {
-        "method": "POST", "url": "https://google.serper.dev/search",
-        "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
-        "sendBody": true, "specifyBody": "json",
-        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.qKDM_2, \"num\": 10, \"page\": 1} }}",
-        "options": {}
-      }
-    },
-    {
-      "name": "Search KDM 3",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [1120, 368],
-      "parameters": {
-        "method": "POST", "url": "https://google.serper.dev/search",
-        "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
-        "sendBody": true, "specifyBody": "json",
-        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.qKDM_3, \"num\": 10, \"page\": 1} }}",
-        "options": {}
-      }
-    },
-    {
-      "name": "Search Comm 1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [896, 528],
-      "parameters": {
-        "method": "POST", "url": "https://google.serper.dev/search",
-        "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
-        "sendBody": true, "specifyBody": "json",
-        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.qComm_1, \"num\": 10, \"page\": 1} }}",
-        "options": {}
-      }
-    },
-    {
-      "name": "Search Comm 2",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [896, 720],
-      "parameters": {
-        "method": "POST", "url": "https://google.serper.dev/search",
-        "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
-        "sendBody": true, "specifyBody": "json",
-        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.qComm_2, \"num\": 10, \"page\": 1} }}",
-        "options": {}
-      }
-    },
-    {
-      "name": "Search Comm 3",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [1120, 896],
-      "parameters": {
-        "method": "POST", "url": "https://google.serper.dev/search",
-        "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "X-API-KEY", "value": "={{ $node[\"Config\"].json.serperApiKey }}" }, { "name": "Content-Type", "value": "application/json" }] },
-        "sendBody": true, "specifyBody": "json",
-        "jsonBody": "={{ {\"q\": $node[\"Config\"].json.qComm_3, \"num\": 10, \"page\": 1} }}",
-        "options": {}
-      }
-    },
-    { "name": "Merge KDM (1+2)", "type": "n8n-nodes-base.merge", "typeVersion": 3.2, "position": [1120, 96], "parameters": { "mode": "append" } },
-    { "name": "Merge KDM All", "type": "n8n-nodes-base.merge", "typeVersion": 3.2, "position": [1344, 192], "parameters": { "mode": "append" } },
-    { "name": "Merge Comm (1+2)", "type": "n8n-nodes-base.merge", "typeVersion": 3.2, "position": [1120, 624], "parameters": { "mode": "append" } },
-    { "name": "Merge Comm All", "type": "n8n-nodes-base.merge", "typeVersion": 3.2, "position": [1344, 720], "parameters": { "mode": "append" } },
-    {
-      "name": "Extract Score KDM",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1568, 192],
-      "parameters": {
-        "jsCode": "function parseTitle(raw) {\n  const t = (raw||'').replace(/\\s*\\|\\s*LinkedIn\\s*$/i,'').trim();\n  const d = t.split(/\\s+-\\s+/);\n  if (d.length >= 2) return { name: d[0].trim(), jobTitle: d[1].trim(), company: (d[2]||'').trim() };\n  const p = t.split(/\\s*\\|\\s*/);\n  if (p.length >= 2) return { name: p[0].trim(), jobTitle: p[1].trim(), company: (p[2]||'').trim() };\n  return { name: t, jobTitle: '', company: '' };\n}\nfunction norm(u) { return (u||'').toLowerCase().replace(/^https?:\\/\\//,'').replace(/\\/$/,'').replace(/[?#].*$/,'').trim(); }\nfunction scoreKDM(t, snippet) {\n  const tl = t.toLowerCase(); const all = tl + ' ' + (snippet||'').toLowerCase();\n  if (/\\b(managing director|country manager|general manager|directeur general|dga)\\b/.test(tl)) return 8;\n  if (/\\b(head of|vp|vice.?president|svp|evp|director|directeur|directrice)\\b/.test(tl))\n    return /\\b(growth|marketing|sales|revenue|product|engineering|data|gtm)\\b/.test(tl) ? 8 : 7;\n  if (/\\b(ceo|cto|coo|cfo|cpo|chief|pdg)\\b/.test(tl))\n    return /\\b(scale.?up|series [b-z]|unicorn|licorne|cac 40|eti|grand groupe)\\b/.test(all) ? 9 : 5;\n  if (/\\b(manager|responsable|lead|senior manager|team lead)\\b/.test(tl)) return 6;\n  return 0;\n}\nconst seen = new Set(); const out = [];\nfor (const item of $input.all()) {\n  for (const r of (item.json.organic||[])) {\n    const url = norm(r.link||'');\n    if (!url.includes('linkedin.com/in/')||url.endsWith('/in/')||seen.has(url)) continue;\n    seen.add(url);\n    const { name, jobTitle, company } = parseTitle(r.title||'');\n    if (!name||!jobTitle) continue;\n    const score = scoreKDM(jobTitle, r.snippet||'');\n    if (score < 4) continue;\n    out.push({ json: { linkedin_url: 'https://'+url, name, job_title: jobTitle, company, persona: 'KDM', score } });\n  }\n}\nreturn out;"
-      }
-    },
-    {
-      "name": "Extract Score Community",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1568, 720],
-      "parameters": {
-        "jsCode": "function parseTitle(raw) {\n  const t = (raw||'').replace(/\\s*\\|\\s*LinkedIn\\s*$/i,'').trim();\n  const d = t.split(/\\s+-\\s+/);\n  if (d.length >= 2) return { name: d[0].trim(), jobTitle: d[1].trim(), company: (d[2]||'').trim() };\n  const p = t.split(/\\s*\\|\\s*/);\n  if (p.length >= 2) return { name: p[0].trim(), jobTitle: p[1].trim(), company: (p[2]||'').trim() };\n  return { name: t, jobTitle: '', company: '' };\n}\nfunction norm(u) { return (u||'').toLowerCase().replace(/^https?:\\/\\//,'').replace(/\\/$/,'').replace(/[?#].*$/,'').trim(); }\nfunction scoreComm(t, snippet) {\n  const tl = t.toLowerCase(); const all = tl + ' ' + (snippet||'').toLowerCase();\n  if (/\\b(ceo|cto|coo|cfo|chief|directeur|director|head of|vp|vice.?president|manager|responsable|lead|senior|chef de projet|charge de mission)\\b/.test(tl)) return 0;\n  let s = 0;\n  if (/\\b(alternant|alternance|apprenti|apprentie|stagiaire)\\b/.test(all)) s += 7;\n  else if (/\\b(etudiant|etudiante|student|en formation)\\b/.test(all)) s += 6;\n  else if (/\\b(promo 202[4-6]|class of 202[4-6]|m2|master 2|m1|bachelor)\\b/.test(all)) s += 6;\n  else if (/\\b(promo 202[2-3]|class of 202[2-3]|junior|debutant|recemment diplome|jeune diplome)\\b/.test(all)) s += 4;\n  if (/\\b(hec paris|essec|escp|polytechnique|centralesupelec|mines paris|sciences.?po)\\b/.test(all)) s += 3;\n  else if (/\\b(edhec|skema|emlyon|neoma|audencia|kedge|insa|epitech|efrei)\\b/.test(all)) s += 2;\n  if (/\\b(data|growth|digital|gtm|marketing|ai|ia|no.?code|automation|product)\\b/.test(all)) s += 1;\n  return Math.min(s, 10);\n}\nconst seen = new Set(); const out = [];\nfor (const item of $input.all()) {\n  for (const r of (item.json.organic||[])) {\n    const url = norm(r.link||'');\n    if (!url.includes('linkedin.com/in/')||url.endsWith('/in/')||seen.has(url)) continue;\n    seen.add(url);\n    const { name, jobTitle, company } = parseTitle(r.title||'');\n    if (!name||!jobTitle) continue;\n    const score = scoreComm(jobTitle, r.snippet||'');\n    if (score < 3) continue;\n    out.push({ json: { linkedin_url: 'https://'+url, name, job_title: jobTitle, company, persona: 'Community', score } });\n  }\n}\nreturn out;"
-      }
-    },
-    { "name": "Merge Tous Profils", "type": "n8n-nodes-base.merge", "typeVersion": 3.2, "position": [1792, 464], "parameters": { "mode": "append" } },
-    {
-      "name": "Dedup Selection 30",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2016, 464],
-      "parameters": {
-        "jsCode": "function norm(u) { return (u||'').toLowerCase().replace(/^https?:\\/\\//,'').replace(/\\/$/,'').replace(/[?#].*$/,'').trim(); }\nfunction gender(name) {\n  const first = (name||'').trim().split(/[\\s\\-]+/)[0].toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');\n  const f = new Set(['marie','sophie','julie','laura','sarah','emma','lea','claire','alice','camille','pauline','lucie','charlotte','manon','anais','celine','anne','nathalie','isabelle','valerie','sandrine','aurelie','mathilde','amandine','elise','margot','ines','clemence','victoria','valentina','elena','anna','lisa','eva','ava','julia','jessica','jennifer','stephanie','emilie','agnes','beatrice','caroline','diana','elisa','flora','gabrielle','hannah','iris','jade','katia','lena','marina','nadia','olivia','priya','rosa','sara','tanya','vera','yasmine','zoe','amelia','bella','chloe','daisy','eleanor','fiona','grace','holly','isla','jasmine','kate','lily','mia','nina','nora','penny','rachel','rose','sienna','tina','violet','willow','zara','fatima','aisha','amira','laila','nour','rima','salma','yara','zineb','hafsa','khadija','malak','rim','samira','widad','hana','shreya','divya','meera','pooja','neha','riya','tanvi','anjali','sonia','leila','mina','farida','amelie','helene','laure','nadege','virginie','veronique','florence','delphine','patricia','sylvie','corinne','martine','christelle','melanie','oceane','coralie','tiffany','agathe','constance','albane','blanche','eugenie','eleonore','clotilde','apolline','capucine','solene','gwenaelle','morgane','maeva','elodie','audrey','vanessa','megane','coline','romane','ophelie','maelle','emeline','laurine','charline','fanny','sofia','natalia','olga','maria','carmen','lucia','isabel','silvia','lorena','andrea','catalina','daniela','fernanda','alexandra','wei','ying','mei','ling','haruka','yuki','miku','emi','keiko','yui','nana']);\n  return f.has(first) ? 'F' : 'M';\n}\nlet existingUrls = new Set();\ntry { const eu = $node[\"Agreger URLs Existantes\"].json.existingUrls; if (Array.isArray(eu)) existingUrls = new Set(eu); } catch(e) {}\nconst seenRun = new Set();\nconst kdmF=[],kdmM=[],commF=[],commM=[];\nfor (const item of $input.all()) {\n  const p = item.json; const n = norm(p.linkedin_url);\n  if (!n||existingUrls.has(n)||seenRun.has(n)) continue;\n  seenRun.add(n);\n  const g = gender(p.name);\n  const profile = { ...p, genre: g, norm_url: n };\n  if (p.persona==='KDM') (g==='F' ? kdmF : kdmM).push(profile);\n  else (g==='F' ? commF : commM).push(profile);\n}\n[kdmF,kdmM,commF,commM].forEach(a => a.sort((x,y)=>(y.score||0)-(x.score||0)));\nconst selected = [...kdmF.splice(0,8),...kdmM.splice(0,7),...commF.splice(0,8),...commM.splice(0,7)];\nif (selected.length < 30) {\n  const rem = [...kdmF,...kdmM,...commF,...commM].sort((a,b)=>(b.score||0)-(a.score||0));\n  const su = new Set(selected.map(p=>p.norm_url));\n  for (const p of rem) { if (selected.length>=30) break; if (!su.has(p.norm_url)) { selected.push(p); su.add(p.norm_url); } }\n}\nconst final = selected.slice(0,30);\nreturn [{ json: { totalProfiles: final.length, kdmCount: final.filter(p=>p.persona==='KDM').length, commCount: final.filter(p=>p.persona==='Community').length, femaleCount: final.filter(p=>p.genre==='F').length, maleCount: final.filter(p=>p.genre==='M').length, avgScore: final.length?(final.reduce((s,p)=>s+(p.score||0),0)/final.length).toFixed(1):'0.0', profiles: final } }];"
-      }
-    },
-    {
-      "name": "Profils Trouves?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [2240, 464],
-      "parameters": {
-        "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
-          "conditions": [{ "leftValue": "={{ $json.totalProfiles }}", "rightValue": 0, "operator": { "type": "number", "operation": "gt" } }],
-          "combinator": "and"
-        }
-      }
-    },
-    {
-      "name": "Preparer Donnees Sheets",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2464, 368],
-      "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst profiles = data.profiles || [];\nconst fixedNote = $node[\"Config\"].json.fixedNote;\nconst dateStr = new Date().toISOString().split('T')[0];\nreturn profiles.map(p => ({ json: { batch_date: dateStr, persona: p.persona, score: p.score||0, genre: p.genre||'M', nom: p.name, titre: p.job_title, entreprise: p.company, linkedin_url: p.linkedin_url, note_connexion: fixedNote } }));"
-      }
-    },
-    {
-      "name": "Google Sheets Append",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [2688, 368],
-      "parameters": {
-        "operation": "append",
-        "documentId": { "__rl": true, "value": "{{GOOGLE_SHEET_ID}}", "mode": "id" },
-        "sheetName": { "__rl": true, "mode": "id", "value": "{{GOOGLE_SHEET_GID}}" },
-        "columns": { "mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [], "schema": [], "attemptToConvertTypes": false, "convertFieldsToString": false },
-        "options": { "handlingExtraData": "insertInNewColumn", "useAppend": true }
-      }
-    },
-    {
-      "name": "Generer CSV",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2912, 368],
-      "parameters": {
-        "jsCode": "const stats = $node[\"Dedup Selection 30\"].json;\nconst profiles = stats.profiles || [];\nconst dateStr = new Date().toISOString().split('T')[0];\nconst q = v => '\"' + String(v||'').replace(/\"/g,'\"\"') + '\"';\nconst fixedNote = $node[\"Config\"].json.fixedNote;\nconst sorted = [...profiles].sort((a,b) => a.persona!==b.persona?(a.persona==='KDM'?-1:1):(b.score||0)-(a.score||0));\nconst header = 'batch_date,persona,score,genre,nom,titre,entreprise,linkedin_url,note_connexion';\nconst rows = sorted.map(p => [q(dateStr),q(p.persona),p.score||0,q(p.genre||'M'),q(p.name),q(p.job_title),q(p.company),p.linkedin_url,q(fixedNote)].join(','));\nconst csv = header + '\\n' + rows.join('\\n');\nconst binary = await this.helpers.prepareBinaryData(Buffer.from(csv,'utf-8'),'prospects_'+dateStr+'.csv','text/csv');\nreturn [{ json: { totalProfiles: stats.totalProfiles, kdmCount: stats.kdmCount, commCount: stats.commCount, femaleCount: stats.femaleCount, maleCount: stats.maleCount, avgScore: stats.avgScore, dateStr }, binary: { attachment: binary } }];"
-      }
-    },
-    {
-      "name": "Gmail Envoyer CSV",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [3136, 368],
-      "parameters": {
-        "operation": "send",
-        "sendTo": "victorlegoffboulon@gmail.com",
-        "subject": "={{ \"Prospects LinkedIn \" + $json.dateStr + \" — \" + $json.totalProfiles + \" profils (KDM: \" + $json.kdmCount + \" | Comm: \" + $json.commCount + \" | F: \" + $json.femaleCount + \" | H: \" + $json.maleCount + \" | Score: \" + $json.avgScore + \"/10)\" }}",
-        "message": "={{ \"<p>Bonjour Victor,</p><p><strong>\" + $json.totalProfiles + \" profils LinkedIn</strong> du \" + $json.dateStr + \" :</p><ul><li>KDM (seniors scale-up) : \" + $json.kdmCount + \"</li><li>Community (juniors grandes ecoles) : \" + $json.commCount + \"</li><li>Femmes : \" + $json.femaleCount + \" | Hommes : \" + $json.maleCount + \"</li><li>Score moyen : \" + $json.avgScore + \"/10</li></ul><p>CSV en piece jointe. Feuille Google Sheets mise a jour (dedup automatique).</p>\" }}",
-        "options": { "appendAttribution": false, "attachmentsUi": { "attachmentsBinary": [{ "property": "attachment" }] } }
-      }
-    },
-    {
-      "name": "Gmail Aucun Profil",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.2,
-      "position": [2464, 560],
-      "parameters": {
-        "operation": "send",
-        "sendTo": "victorlegoffboulon@gmail.com",
-        "subject": "={{ \"Prospects LinkedIn \" + new Date().toISOString().split('T')[0] + \" — Aucun nouveau profil\" }}",
-        "message": "<p>Tous les profils disponibles ont deja ete traites. Verifiez les queries ou attendez de nouveaux profils LinkedIn.</p>",
-        "options": { "appendAttribution": false }
-      }
-    }
+    { "name": "Lire Prospects Existants", "type": "n8n-nodes-base.googleSheets", "note": "alwaysOutputData:true — fonctionne même si feuille vide. Sheet: 1qZJM-7wGS2VmWuFfMvuCQg1FhGBmsbqLVs_Efep7yp0 / Sheet1" },
+    { "name": "Agreger URLs Existantes", "type": "n8n-nodes-base.code", "note": "Normalise les URLs existantes → 1 item {existingUrls:[...]}" },
+    { "name": "Query Optimizer", "type": "n8n-nodes-base.code", "note": "Lit static data → {commPage, kdmPage, commScoreMin}. Auto-ajusté par Feedback Logger chaque run." },
+    { "name": "Search KDM 1-4 + Search KDM F", "type": "n8n-nodes-base.httpRequest", "note": "5 requêtes Serper KDM dont 1 ciblée F (directrice/fondatrice). Page dynamique via Query Optimizer." },
+    { "name": "Search Comm 1-4 + Search Comm F", "type": "n8n-nodes-base.httpRequest", "note": "5 requêtes Serper Community dont 1 ciblée F (alternante/apprentie/etudiante). Page dynamique." },
+    { "name": "Merge KDM (1+2) / (3+4) / AB / All", "type": "n8n-nodes-base.merge", "note": "Arbre de 4 merges en mode append pour fusionner les 5 sources KDM" },
+    { "name": "Merge Comm (1+2) / (3+4) / AB / All", "type": "n8n-nodes-base.merge", "note": "Arbre de 4 merges en mode append pour fusionner les 5 sources Community" },
+    { "name": "Extract Score KDM", "type": "n8n-nodes-base.code", "note": "Parse titres LinkedIn, score KDM (8=Head of/VP/Director, 9=CEO scale-up, 6=Manager). Filtre score<4." },
+    { "name": "Extract Score Community", "type": "n8n-nodes-base.code", "note": "Parse titres LinkedIn, score Community (7=alternant, 6=etudiant/M2, 0 si titre senior). Filtre score<3." },
+    { "name": "Merge Tous Profils", "type": "n8n-nodes-base.merge", "note": "Fusionne KDM extractés + Community extractés → pool ~130 candidats" },
+    { "name": "Crosscheck Quality Gate", "type": "n8n-nodes-base.code", "note": "Validation URL, score min, nom, pureté persona. Filtre les profils invalides. Enregistre stats dans static data." },
+    { "name": "Dedup Selection 30", "type": "n8n-nodes-base.code", "note": "Dedup vs feuille existante. Détection genre (marqueurs FR + liste ~200 prénoms F). Sélection 8F_KDM+7M_KDM+8F_Comm+7M_Comm=30." },
+    { "name": "Profils Trouves?", "type": "n8n-nodes-base.if", "note": "IF totalProfiles>0 → pipeline → sinon email vide" },
+    { "name": "Preparer Donnees Sheets", "type": "n8n-nodes-base.code", "note": "Formate 30 profils pour Google Sheets: batch_date, persona, score, genre, nom, titre, entreprise, linkedin_url, note_connexion" },
+    { "name": "Google Sheets Append", "type": "n8n-nodes-base.googleSheets", "note": "Append 30 nouvelles lignes. Sheet: 1qZJM-7wGS2VmWuFfMvuCQg1FhGBmsbqLVs_Efep7yp0 / Sheet1" },
+    { "name": "Feedback Logger", "type": "n8n-nodes-base.code", "note": "Enregistre stats run dans static data (10 derniers runs). Calcule nextRunAdjustments: commPage, commScoreMin. Auto-apprentissage." },
+    { "name": "Generer CSV", "type": "n8n-nodes-base.code", "note": "CSV batch du jour uniquement (30 profils). Colonnes: batch_date,persona,score,genre,nom,titre,entreprise,linkedin_url,note_connexion" },
+    { "name": "Gmail Envoyer CSV", "type": "n8n-nodes-base.gmail", "note": "Envoie à victorlegoffboulon@gmail.com avec stats complètes (KDM/Comm/F/H/score) en sujet" },
+    { "name": "Gmail Aucun Profil", "type": "n8n-nodes-base.gmail", "note": "Email fallback si 0 nouveau profil (tous déjà vus)" }
   ],
+  "pipeline": "Schedule → Config → Lire Prospects → Agreger URLs → Query Optimizer → [10 Searches] → [8 Merges] → [2 Extracts] → Merge Tous → Crosscheck → Dedup Selection 30 → IF → Preparer → Sheets Append → Feedback Logger → Generer CSV → Gmail",
   "connections": {
-    "Schedule 7h (Lun-Ven)": { "main": [[{ "node": "Config", "type": "main", "index": 0 }]] },
-    "Config": { "main": [[{ "node": "Lire Prospects Existants", "type": "main", "index": 0 }]] },
-    "Lire Prospects Existants": { "main": [[{ "node": "Agreger URLs Existantes", "type": "main", "index": 0 }]] },
-    "Agreger URLs Existantes": { "main": [[{ "node": "Search KDM 1", "type": "main", "index": 0 }, { "node": "Search KDM 2", "type": "main", "index": 0 }, { "node": "Search KDM 3", "type": "main", "index": 0 }, { "node": "Search Comm 1", "type": "main", "index": 0 }, { "node": "Search Comm 2", "type": "main", "index": 0 }, { "node": "Search Comm 3", "type": "main", "index": 0 }]] },
-    "Search KDM 1": { "main": [[{ "node": "Merge KDM (1+2)", "type": "main", "index": 0 }]] },
-    "Search KDM 2": { "main": [[{ "node": "Merge KDM (1+2)", "type": "main", "index": 1 }]] },
-    "Merge KDM (1+2)": { "main": [[{ "node": "Merge KDM All", "type": "main", "index": 0 }]] },
-    "Search KDM 3": { "main": [[{ "node": "Merge KDM All", "type": "main", "index": 1 }]] },
-    "Merge KDM All": { "main": [[{ "node": "Extract Score KDM", "type": "main", "index": 0 }]] },
-    "Extract Score KDM": { "main": [[{ "node": "Merge Tous Profils", "type": "main", "index": 0 }]] },
-    "Search Comm 1": { "main": [[{ "node": "Merge Comm (1+2)", "type": "main", "index": 0 }]] },
-    "Search Comm 2": { "main": [[{ "node": "Merge Comm (1+2)", "type": "main", "index": 1 }]] },
-    "Merge Comm (1+2)": { "main": [[{ "node": "Merge Comm All", "type": "main", "index": 0 }]] },
-    "Search Comm 3": { "main": [[{ "node": "Merge Comm All", "type": "main", "index": 1 }]] },
-    "Merge Comm All": { "main": [[{ "node": "Extract Score Community", "type": "main", "index": 0 }]] },
-    "Extract Score Community": { "main": [[{ "node": "Merge Tous Profils", "type": "main", "index": 1 }]] },
-    "Merge Tous Profils": { "main": [[{ "node": "Dedup Selection 30", "type": "main", "index": 0 }]] },
-    "Dedup Selection 30": { "main": [[{ "node": "Profils Trouves?", "type": "main", "index": 0 }]] },
-    "Profils Trouves?": { "main": [[{ "node": "Preparer Donnees Sheets", "type": "main", "index": 0 }], [{ "node": "Gmail Aucun Profil", "type": "main", "index": 0 }]] },
-    "Preparer Donnees Sheets": { "main": [[{ "node": "Google Sheets Append", "type": "main", "index": 0 }]] },
-    "Google Sheets Append": { "main": [[{ "node": "Generer CSV", "type": "main", "index": 0 }]] },
-    "Generer CSV": { "main": [[{ "node": "Gmail Envoyer CSV", "type": "main", "index": 0 }]] }
+    "note": "KDM: S1+S2→M12, S3+S4→M34, M12+M34→MAB, MAB+SKDMF→MAll → ExtractKDM → MergeTous[0]\nComm: S1+S2→M12, S3+S4→M34, M12+M34→MAB, MAB+SCommF→MAll → ExtractComm → MergeTous[1]"
+  },
+  "sheetId": "1qZJM-7wGS2VmWuFfMvuCQg1FhGBmsbqLVs_Efep7yp0",
+  "secrets": {
+    "SERPER_API_KEY": "{{SERPER_API_KEY}} — remplacer dans Config node n8n",
+    "GOOGLE_SHEETS": "Credential n8n: Google Sheets account"
+  },
+  "feedbackLoop": {
+    "queryOptimizer": "Lit static data.nextRunAdjustments au début de chaque run",
+    "feedbackLogger": "Après chaque run: stocke stats, calcule adjustments pour le run suivant",
+    "adjustments": {
+      "commPage": "Si commSelected < 10 sur 3 derniers runs → page 2 (nouveaux profils)",
+      "commScoreMin": "Si commSelected < 7 sur 3 derniers runs → seuil réduit à 2 (plus permissif)"
+    }
   }
 }
